@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="CircleTimerView">
+        <attr name="lineSeparatorStrokeWidth" format="dimension" />
+        <attr name="lineSeparatorColor" format="color"/>
+        <attr name="backCircleStrokeWidth" format="dimension" />
+        <attr name="backCircleColor" format="color"/>
+        <attr name="foregroundCircleStrokeWidth" format="dimension" />
+        <attr name="foregroundCircleColor" format="color"/>
+        <attr name="timeCountdownInSecond" format="integer"/>
+        <attr name="totalTimeInSecond" format="integer"/>
+        <attr name="labelSize" format="dimension"/>
+        <attr name="labelColor" format="color"/>
+        <attr name="valueTopSize" format="dimension"/>
+        <attr name="valueBottomSize" format="dimension"/>
+        <attr name="valueTopColor" format="color"/>
+        <attr name="valueBottomColor" format="color"/>
+        <attr name="labelForWeeks" format="string"/>
+        <attr name="labelForDays" format="string"/>
+        <attr name="labelForHours" format="string"/>
+        <attr name="labelForMinutes" format="string"/>
+        <attr name="labelForSeconds" format="string"/>
+        <attr name="clockwise" format="boolean"/>
+        <attr name="additiveMode" format="boolean"/>
+    </declare-styleable>
+
+</resources>
