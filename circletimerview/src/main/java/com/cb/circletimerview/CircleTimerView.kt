@@ -3,11 +3,9 @@ package com.cb.circletimerview
 import android.content.Context
 import android.content.res.TypedArray
 import android.graphics.*
-import android.util.AttributeSet
-import android.util.TypedValue
+import android.util.*
 import android.view.View
-import android.view.animation.Animation
-import android.view.animation.Transformation
+import java.util.*
 
 
 /**
@@ -44,13 +42,12 @@ class CircleTimerView : View {
     //  --------------------------------------------------------------------------------------------
     //      default values
     //  --------------------------------------------------------------------------------------------
-    private val timeDivider = HashMap<Int, Int>()
-    private val timeLabel = HashMap<Int, String>()
-    private val timeCountdownInSecondDef = 0
-    private val totalTimeInSecondDef = 0
+    private val timeDivider = SparseIntArray()
+    private val timeLabel = SparseArray<String>()
+    private val timeCountdownInMillisecondDef = 0
+    private val totalTimeInMillisecondDef = 0
     private val swipeAngleDef = 360f
     private val swipeAngleAddDef = 0f
-    private val clockwiseDef = false
     private val additiveModeDef = false
     private val labelSizeDef = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 30f, context.resources.displayMetrics)
     private val labelColorDef = Color.GRAY
@@ -82,22 +79,61 @@ class CircleTimerView : View {
                 (height / 2).toFloat() + radius()
         )
     }
-    private var timeCountdownInSecond = timeCountdownInSecondDef
-    var totalTimeInSecond = totalTimeInSecondDef
+
+    private val timer = Timer()
+    private val additiveTimerTask = object : TimerTask() {
+        override fun run() {
+            Log.d("timer...", "actual second: " + totalTimeInMillisecond)
+            totalTimeInMillisecond = ++totalTimeInMillisecond
+        }
+    }
+    private val subtractiveTimerTask = object : TimerTask() {
+        override fun run() {
+            when (totalTimeInMillisecond) {
+                0 -> {
+                    Log.d("timer...", "Timer 0... cancelled")
+                    timer.cancel()
+                    timer.purge()
+                }
+                else -> {
+                    Log.d("timer...", "actual second: " + totalTimeInMillisecond)
+                    totalTimeInMillisecond = --totalTimeInMillisecond
+                }
+            }
+        }
+    }
+
+    var timeCountdownInMillisecond = timeCountdownInMillisecondDef
         set(value) {
             field = value
-            foregroundMovement()
             postInvalidate()
         }
-    private var n = 0
-    private var labelTop = ""
-    private var valueTop = ""
-    private var labelBottom = ""
-    private var valueBottom = ""
-    private var swipeAngle = swipeAngleDef
-    private var clockwise = clockwiseDef
-    private var additiveMode = additiveModeDef
+    var totalTimeInMillisecond = totalTimeInMillisecondDef
+        set(value) {
+            field = value
+            n = 0
+            setTimeValue(totalTimeInMillisecond)
+            foregroundMovement()
+            setTimeValue(value)
+            postInvalidate()
+        }
+    var labelTop = ""
+    var valueTop = ""
+    var labelBottom = ""
+    var valueBottom = ""
+    var swipeAngle = swipeAngleDef
+        set(value) {
+            field = value
+            postInvalidate()
+        }
+    var additiveMode = additiveModeDef
+        set(value) {
+            field = value
+            postInvalidate()
+        }
+
     private var foregroundCircleStartValue = foregroundCircleStartValueDef
+    private var n = 0
     private val lineSeparatorPaint = Paint()
     private val backCirclePaint = Paint()
     private val foregroundCirclePaint = Paint()
@@ -109,9 +145,8 @@ class CircleTimerView : View {
     //      initializer property method
     //  --------------------------------------------------------------------------------------------
     private fun readAttributesAndSetupFields(attrs: TypedArray) {
-        timeCountdownInSecond = attrs.getInteger(R.styleable.CircleTimerView_timeCountdownInSecond, timeCountdownInSecondDef)
-        totalTimeInSecond = attrs.getInteger(R.styleable.CircleTimerView_totalTimeInSecond, totalTimeInSecondDef)
-        clockwise = attrs.getBoolean(R.styleable.CircleTimerView_clockwise, clockwiseDef)
+        timeCountdownInMillisecond = attrs.getInteger(R.styleable.CircleTimerView_timeCountdownInMillisecond, timeCountdownInMillisecondDef)
+        totalTimeInMillisecond = attrs.getInt(R.styleable.CircleTimerView_totalTimeInMillisecond, totalTimeInMillisecondDef)
         additiveMode = attrs.getBoolean(R.styleable.CircleTimerView_additiveMode, additiveModeDef)
         swipeAngle = if (additiveMode) swipeAngleAddDef else swipeAngleDef
         timeLabel.put(0, attrs.getString(R.styleable.CircleTimerView_labelForSeconds, labelForSecondsDef))
@@ -119,10 +154,11 @@ class CircleTimerView : View {
         timeLabel.put(2, attrs.getString(R.styleable.CircleTimerView_labelForHours, labelForHoursDef))
         timeLabel.put(3, attrs.getString(R.styleable.CircleTimerView_labelForDays, labelForDaysDef))
         timeLabel.put(4, attrs.getString(R.styleable.CircleTimerView_labelForWeeks, labelForWeeksDef))
-        timeDivider.put(0, 60)
-        timeDivider.put(1, 60)
-        timeDivider.put(2, 24)
-        timeDivider.put(3, 7)
+        timeDivider.put(0, 1000)
+        timeDivider.put(1, 60000)
+        timeDivider.put(2, 3600000)
+        timeDivider.put(3, 86400000)
+        timeDivider.put(4, 604800000)
         n = 0
         paintSetup(
                 lineSeparatorPaint,
@@ -156,7 +192,6 @@ class CircleTimerView : View {
                 attrs.getDimension(R.styleable.CircleTimerView_valueBottomSize, valueBottomSizeDef),
                 true
         )
-        setTimeValue(totalTimeInSecond)
         foregroundMovement()
         postInvalidate()
     }
@@ -253,63 +288,58 @@ class CircleTimerView : View {
         }
     }
 
+
     private fun setTimeValue(timeValue: Int) {
-        if (n == timeDivider.size) return
+        Log.w("time...", "timeValue...." + timeValue)
+        Log.w("time...", "enne...." + n)
+        Log.w("time...", "size...." + timeDivider.size())
+        Log.w("time...", "...")
+
+
+
+        if (n == timeDivider.size()) return
 
         labelBottom = label(n)
-        valueBottom = (timeValue % timeDivider[n]!!).toString()
+        valueBottom = (timeValue % timeDivider.get(n)).toString()
 
-        when (timeValue / timeDivider[n]!! > timeDivider[n]!!) {
+        Log.w("time...", "enne...." + n)
+        when (timeValue / timeDivider.get(n) > timeDivider.get(n)) {
             true -> {
+                Log.w("time...", "ricorre")
                 n++
-                setTimeValue(timeValue / timeDivider[n]!!)
+                setTimeValue(timeValue / timeDivider.get(n))
             }
             else -> {
-                labelTop = label(n + 1)
-                valueTop = (timeValue / timeDivider[n]!!).toString()
+                labelTop = label(n)
+                valueTop = (timeValue / timeDivider.get(n)).toString()
             }
         }
     }
 
     private fun foregroundMovement() {
-        when (additiveMode) {
-            true -> addMovement()
-            else -> subtractMovement()
-        }
+        swipeAngle = (swipeAngleDef * totalTimeInMillisecond) / timeCountdownInMillisecond
     }
 
-    private fun addMovement() {
+    private fun label(position: Int) = timeLabel.get(position)
 
+    fun startTimer() {
+        Log.w("timer...", "Timer additive mode... " + additiveMode)
+        timer.schedule(
+                when (additiveMode) {
+                    true -> additiveTimerTask
+                    else -> subtractiveTimerTask
+                },
+                1,
+                1
+        )
     }
 
-    private fun subtractMovement() {
-        when (clockwise) {
-            true -> subtractMovementClockwise()
-            else -> subtractMovementAnticlockwise()
-        }
+    fun stopTimer() {
+        Log.w("timer...", "Timer cancelled")
+        timer.cancel()
+        timer.purge()
     }
 
-    private fun subtractMovementClockwise() {
-
-    }
-
-    private fun subtractMovementAnticlockwise() {
-
-        val a = object : Animation() {
-            override fun applyTransformation(interpolatedTime: Float, t: Transformation) {
-                swipeAngle = (swipeAngleDef * totalTimeInSecond) / timeCountdownInSecond
-            }
-
-            override fun willChangeBounds(): Boolean {
-                return true
-            }
-        }
-        a.duration = 5000
-
-        this.startAnimation(a)
-    }
-
-    private fun label(position: Int) = timeLabel[position]!!
 }
 
 //  --------------------------------------------------------------------------------------------

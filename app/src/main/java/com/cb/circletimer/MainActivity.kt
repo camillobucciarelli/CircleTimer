@@ -1,19 +1,16 @@
 package com.cb.circletimer
 
-import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
+import android.support.v7.app.AppCompatActivity
 import com.cb.circletimerview.CircleTimerView
-import java.util.*
 
 class MainActivity : AppCompatActivity() {
+
+    private val a by lazy { findViewById<CircleTimerView>(R.id.timer) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-
-        val a = findViewById<CircleTimerView>(R.id.timer)
-
-        a.totalTimeInSecond = 15
-        a.totalTimeInSecond = 50
+        a.totalTimeInMillisecond = 1000
     }
 }

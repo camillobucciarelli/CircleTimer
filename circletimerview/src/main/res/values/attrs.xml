@@ -7,8 +7,8 @@
         <attr name="backCircleColor" format="color"/>
         <attr name="foregroundCircleStrokeWidth" format="dimension" />
         <attr name="foregroundCircleColor" format="color"/>
-        <attr name="timeCountdownInSecond" format="integer"/>
-        <attr name="totalTimeInSecond" format="integer"/>
+        <attr name="timeCountdownInMillisecond" format="integer"/>
+        <attr name="totalTimeInMillisecond" format="integer"/>
         <attr name="labelSize" format="dimension"/>
         <attr name="labelColor" format="color"/>
         <attr name="valueTopSize" format="dimension"/>
@@ -20,7 +20,6 @@
         <attr name="labelForHours" format="string"/>
         <attr name="labelForMinutes" format="string"/>
         <attr name="labelForSeconds" format="string"/>
-        <attr name="clockwise" format="boolean"/>
         <attr name="additiveMode" format="boolean"/>
     </declare-styleable>
 

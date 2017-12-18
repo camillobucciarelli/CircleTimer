@@ -10,7 +10,6 @@
         android:id="@+id/timer"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        app:totalTimeInSecond="30"
-        app:timeCountdownInSecond="200"/>
+        app:timeCountdownInMillisecond="1000"/>
 
 </android.support.constraint.ConstraintLayout>
