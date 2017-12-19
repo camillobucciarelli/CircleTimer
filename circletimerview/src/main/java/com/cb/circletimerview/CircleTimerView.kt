@@ -111,7 +111,7 @@ class CircleTimerView : View {
     var totalTimeInMillisecond = totalTimeInMillisecondDef
         set(value) {
             field = value
-            n = 0
+            n = -1
             setTimeValue(totalTimeInMillisecond)
             foregroundMovement()
             setTimeValue(value)
@@ -133,7 +133,7 @@ class CircleTimerView : View {
         }
 
     private var foregroundCircleStartValue = foregroundCircleStartValueDef
-    private var n = 0
+    private var n = -1
     private val lineSeparatorPaint = Paint()
     private val backCirclePaint = Paint()
     private val foregroundCirclePaint = Paint()
@@ -154,12 +154,12 @@ class CircleTimerView : View {
         timeLabel.put(2, attrs.getString(R.styleable.CircleTimerView_labelForHours, labelForHoursDef))
         timeLabel.put(3, attrs.getString(R.styleable.CircleTimerView_labelForDays, labelForDaysDef))
         timeLabel.put(4, attrs.getString(R.styleable.CircleTimerView_labelForWeeks, labelForWeeksDef))
-        timeDivider.put(0, 1000)
-        timeDivider.put(1, 60000)
-        timeDivider.put(2, 3600000)
-        timeDivider.put(3, 86400000)
-        timeDivider.put(4, 604800000)
-        n = 0
+        timeDivider.put(1, 1000)
+        timeDivider.put(2, 60000)
+        timeDivider.put(3, 60000)
+        timeDivider.put(4, 24000)
+        timeDivider.put(5, 7000)
+        n = -1
         paintSetup(
                 lineSeparatorPaint,
                 attrs.getColor(R.styleable.CircleTimerView_lineSeparatorColor, lineSeparatorColorDef),
@@ -290,37 +290,39 @@ class CircleTimerView : View {
 
 
     private fun setTimeValue(timeValue: Int) {
-        Log.w("time...", "timeValue...." + timeValue)
-        Log.w("time...", "enne...." + n)
-        Log.w("time...", "size...." + timeDivider.size())
-        Log.w("time...", "...")
 
 
 
-        if (n == timeDivider.size()) return
-
-        labelBottom = label(n)
-        valueBottom = (timeValue % timeDivider.get(n)).toString()
-
-        Log.w("time...", "enne...." + n)
-        when (timeValue / timeDivider.get(n) > timeDivider.get(n)) {
-            true -> {
-                Log.w("time...", "ricorre")
-                n++
-                setTimeValue(timeValue / timeDivider.get(n))
-            }
-            else -> {
-                labelTop = label(n)
-                valueTop = (timeValue / timeDivider.get(n)).toString()
-            }
-        }
+//        n++
+//
+//        if (n == timeDivider.size()) return
+//
+//        Log.w("set time...","n: "+n)
+//
+//        Log.w("set time...","timeDivider.get(n): "+timeDivider.get(n))
+//
+//        if (timeDivider.get(n) != 0) {
+//            labelBottom = label(n)
+//            valueBottom = (timeValue % timeDivider.get(n)).toString()
+//
+//            when (timeValue / timeDivider.get(n) > timeDivider.get(n)) {
+//                true -> {
+//                    Log.e("set time...","recall ")
+//                    setTimeValue(timeValue / timeDivider.get(n))
+//                }
+//                else -> {
+//                    labelTop = label(n)
+//                    valueTop = (timeValue / timeDivider.get(n)).toString()
+//                }
+//            }
+//        }
     }
 
     private fun foregroundMovement() {
         swipeAngle = (swipeAngleDef * totalTimeInMillisecond) / timeCountdownInMillisecond
     }
 
-    private fun label(position: Int) = timeLabel.get(position)
+    private fun label(position: Int) = timeLabel.get(position-1)
 
     fun startTimer() {
         Log.w("timer...", "Timer additive mode... " + additiveMode)
