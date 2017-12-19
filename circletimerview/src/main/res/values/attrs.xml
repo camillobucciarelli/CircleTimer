@@ -7,15 +7,14 @@
         <attr name="backCircleColor" format="color"/>
         <attr name="foregroundCircleStrokeWidth" format="dimension" />
         <attr name="foregroundCircleColor" format="color"/>
-        <attr name="timeCountdownInMillisecond" format="integer"/>
-        <attr name="totalTimeInMillisecond" format="integer"/>
+        <attr name="circleTimeLimitInMillis" format="integer"/>
+        <attr name="startTimeInMillis" format="integer"/>
         <attr name="labelSize" format="dimension"/>
         <attr name="labelColor" format="color"/>
         <attr name="valueTopSize" format="dimension"/>
         <attr name="valueBottomSize" format="dimension"/>
         <attr name="valueTopColor" format="color"/>
         <attr name="valueBottomColor" format="color"/>
-        <attr name="labelForWeeks" format="string"/>
         <attr name="labelForDays" format="string"/>
         <attr name="labelForHours" format="string"/>
         <attr name="labelForMinutes" format="string"/>

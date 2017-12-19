@@ -3,10 +3,13 @@ package com.cb.circletimerview
 import android.content.Context
 import android.content.res.TypedArray
 import android.graphics.*
-import android.util.*
+import android.util.AttributeSet
+import android.util.Log
+import android.util.SparseArray
+import android.util.TypedValue
 import android.view.View
 import java.util.*
-
+import java.util.concurrent.TimeUnit
 
 /**
  *Copyright 2017 Camillo Bucciarelli
@@ -25,8 +28,9 @@ import java.util.*
  */
 class CircleTimerView : View {
 
-    constructor(context: Context) : super(context)
+    private val logTag = CircleTimerView::class.java.canonicalName
 
+    constructor(context: Context) : super(context)
     constructor(context: Context, attrs: AttributeSet) : super(context, attrs) {
         init(attrs)
     }
@@ -42,12 +46,14 @@ class CircleTimerView : View {
     //  --------------------------------------------------------------------------------------------
     //      default values
     //  --------------------------------------------------------------------------------------------
-    private val timeDivider = SparseIntArray()
+    private val timeDivider = SparseArray<Long>()
+    private val dividedTime = SparseArray<Long>()
     private val timeLabel = SparseArray<String>()
-    private val timeCountdownInMillisecondDef = 0
-    private val totalTimeInMillisecondDef = 0
+    private val circleTimeLimitInMillisDef = 0
+    private val startTimeInMillisDef = 0
     private val swipeAngleDef = 360f
     private val swipeAngleAddDef = 0f
+    private val timerElapseVelocity = 200L
     private val additiveModeDef = false
     private val labelSizeDef = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 30f, context.resources.displayMetrics)
     private val labelColorDef = Color.GRAY
@@ -55,7 +61,6 @@ class CircleTimerView : View {
     private val valueTopColorDef = Color.GRAY
     private val valueBottomSizeDef = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 50f, context.resources.displayMetrics)
     private val valueBottomColorDef = Color.LTGRAY
-    private val labelForWeeksDef = "WK"
     private val labelForDaysDef = "DAY"
     private val labelForHoursDef = "HR"
     private val labelForMinutesDef = "MIN"
@@ -79,61 +84,34 @@ class CircleTimerView : View {
                 (height / 2).toFloat() + radius()
         )
     }
+    private var timer: Timer? = null
 
-    private val timer = Timer()
-    private val additiveTimerTask = object : TimerTask() {
-        override fun run() {
-            Log.d("timer...", "actual second: " + totalTimeInMillisecond)
-            totalTimeInMillisecond = ++totalTimeInMillisecond
-        }
-    }
-    private val subtractiveTimerTask = object : TimerTask() {
-        override fun run() {
-            when (totalTimeInMillisecond) {
-                0 -> {
-                    Log.d("timer...", "Timer 0... cancelled")
-                    timer.cancel()
-                    timer.purge()
-                }
-                else -> {
-                    Log.d("timer...", "actual second: " + totalTimeInMillisecond)
-                    totalTimeInMillisecond = --totalTimeInMillisecond
-                }
-            }
-        }
-    }
-
-    var timeCountdownInMillisecond = timeCountdownInMillisecondDef
+    var circleTimeLimitInMillis = circleTimeLimitInMillisDef.toLong()
         set(value) {
             field = value
             postInvalidate()
         }
-    var totalTimeInMillisecond = totalTimeInMillisecondDef
+    var startTimeInMillis = startTimeInMillisDef.toLong()
         set(value) {
             field = value
-            n = -1
-            setTimeValue(totalTimeInMillisecond)
+            setTimeValue(startTimeInMillis)
             foregroundMovement()
             setTimeValue(value)
             postInvalidate()
         }
-    var labelTop = ""
-    var valueTop = ""
-    var labelBottom = ""
-    var valueBottom = ""
-    var swipeAngle = swipeAngleDef
-        set(value) {
-            field = value
-            postInvalidate()
-        }
+    private var labelTop = labelForMinutesDef
+    private var valueTop = "0"
+    private var labelBottom = labelForSecondsDef
+    private var valueBottom = "0"
+    private var swipeAngle = swipeAngleDef
     var additiveMode = additiveModeDef
         set(value) {
             field = value
+            Log.d(logTag, "additiveMode: " + additiveMode)
             postInvalidate()
         }
 
     private var foregroundCircleStartValue = foregroundCircleStartValueDef
-    private var n = -1
     private val lineSeparatorPaint = Paint()
     private val backCirclePaint = Paint()
     private val foregroundCirclePaint = Paint()
@@ -145,21 +123,20 @@ class CircleTimerView : View {
     //      initializer property method
     //  --------------------------------------------------------------------------------------------
     private fun readAttributesAndSetupFields(attrs: TypedArray) {
-        timeCountdownInMillisecond = attrs.getInteger(R.styleable.CircleTimerView_timeCountdownInMillisecond, timeCountdownInMillisecondDef)
-        totalTimeInMillisecond = attrs.getInt(R.styleable.CircleTimerView_totalTimeInMillisecond, totalTimeInMillisecondDef)
+        circleTimeLimitInMillis = attrs.getInteger(R.styleable.CircleTimerView_circleTimeLimitInMillis, circleTimeLimitInMillisDef).toLong()
+        startTimeInMillis = attrs.getInt(R.styleable.CircleTimerView_startTimeInMillis, startTimeInMillisDef).toLong()
         additiveMode = attrs.getBoolean(R.styleable.CircleTimerView_additiveMode, additiveModeDef)
         swipeAngle = if (additiveMode) swipeAngleAddDef else swipeAngleDef
-        timeLabel.put(0, attrs.getString(R.styleable.CircleTimerView_labelForSeconds, labelForSecondsDef))
-        timeLabel.put(1, attrs.getString(R.styleable.CircleTimerView_labelForMinutes, labelForMinutesDef))
-        timeLabel.put(2, attrs.getString(R.styleable.CircleTimerView_labelForHours, labelForHoursDef))
-        timeLabel.put(3, attrs.getString(R.styleable.CircleTimerView_labelForDays, labelForDaysDef))
-        timeLabel.put(4, attrs.getString(R.styleable.CircleTimerView_labelForWeeks, labelForWeeksDef))
-        timeDivider.put(1, 1000)
-        timeDivider.put(2, 60000)
-        timeDivider.put(3, 60000)
-        timeDivider.put(4, 24000)
-        timeDivider.put(5, 7000)
-        n = -1
+        timeLabel.put(0, attrs.getString(R.styleable.CircleTimerView_labelForDays, labelForDaysDef))
+        timeLabel.put(1, attrs.getString(R.styleable.CircleTimerView_labelForHours, labelForHoursDef))
+        timeLabel.put(2, attrs.getString(R.styleable.CircleTimerView_labelForMinutes, labelForMinutesDef))
+        timeLabel.put(3, attrs.getString(R.styleable.CircleTimerView_labelForSeconds, labelForSecondsDef))
+        labelTop = timeLabel.get(2)
+        labelBottom = timeLabel.get(3)
+        timeDivider.put(0, 0)
+        timeDivider.put(1, 24)
+        timeDivider.put(2, 60)
+        timeDivider.put(3, 60)
         paintSetup(
                 lineSeparatorPaint,
                 attrs.getColor(R.styleable.CircleTimerView_lineSeparatorColor, lineSeparatorColorDef),
@@ -289,67 +266,114 @@ class CircleTimerView : View {
     }
 
 
-    private fun setTimeValue(timeValue: Int) {
+    private fun setTimeValue(timeValue: Long) {
+        dividedTime.put(0, TimeUnit.MILLISECONDS.toDays(timeValue))
+        dividedTime.put(1, TimeUnit.MILLISECONDS.toHours(timeValue))
+        dividedTime.put(2, TimeUnit.MILLISECONDS.toMinutes(timeValue))
+        dividedTime.put(3, TimeUnit.MILLISECONDS.toSeconds(timeValue))
+        Log.d(logTag, "days: " + TimeUnit.MILLISECONDS.toDays(timeValue))
+        Log.d(logTag, "hours: " + TimeUnit.MILLISECONDS.toHours(timeValue))
+        Log.d(logTag, "minutes: " + TimeUnit.MILLISECONDS.toMinutes(timeValue))
+        Log.d(logTag, "seconds: " + TimeUnit.MILLISECONDS.toSeconds(timeValue))
+        Log.d(logTag, "dividedTime.size(): " + dividedTime.size())
 
+        if (!dividedTime.isEmpty()) {
+            for (i in 0 until dividedTime.size() - 1) {
+                when (dividedTime.get(i)) {
+                    0L -> {
+                        if (i == dividedTime.size() - 2) {
+                            labelTop = label(i)
+                            valueTop = (dividedTime.get(i)).toString()
+                            setBottomStrings(i + 1)
+                        }
+                    }
+                    else -> {
+                        labelTop = label(i)
+                        valueTop = (dividedTime.get(i)).toString()
+                        setBottomStrings(i + 1)
+                        return
+                    }
+                }
+            }
+        }
+    }
 
-
-//        n++
-//
-//        if (n == timeDivider.size()) return
-//
-//        Log.w("set time...","n: "+n)
-//
-//        Log.w("set time...","timeDivider.get(n): "+timeDivider.get(n))
-//
-//        if (timeDivider.get(n) != 0) {
-//            labelBottom = label(n)
-//            valueBottom = (timeValue % timeDivider.get(n)).toString()
-//
-//            when (timeValue / timeDivider.get(n) > timeDivider.get(n)) {
-//                true -> {
-//                    Log.e("set time...","recall ")
-//                    setTimeValue(timeValue / timeDivider.get(n))
-//                }
-//                else -> {
-//                    labelTop = label(n)
-//                    valueTop = (timeValue / timeDivider.get(n)).toString()
-//                }
-//            }
-//        }
+    private fun setBottomStrings(position: Int) {
+        labelBottom = label(position)
+        valueBottom = if (dividedTime.get(position) >= timeDivider.get(position)) {
+            (dividedTime.get(position) % timeDivider.get(position)).toString()
+        } else {
+            (dividedTime.get(position)).toString()
+        }
     }
 
     private fun foregroundMovement() {
-        swipeAngle = (swipeAngleDef * totalTimeInMillisecond) / timeCountdownInMillisecond
+        swipeAngle = (swipeAngleDef * startTimeInMillis) / circleTimeLimitInMillis
     }
 
-    private fun label(position: Int) = timeLabel.get(position-1)
+    private fun label(position: Int) = timeLabel.get(position)
 
     fun startTimer() {
-        Log.w("timer...", "Timer additive mode... " + additiveMode)
-        timer.schedule(
+        Log.w(logTag, "Timer additive mode... " + additiveMode)
+        timer = Timer()
+        timer!!.schedule(
                 when (additiveMode) {
-                    true -> additiveTimerTask
-                    else -> subtractiveTimerTask
+                    true -> object : TimerTask() {
+                        override fun run() {
+                            handler.post {
+                                Log.d(logTag, "additiveTimerTask - actual second: " + startTimeInMillis)
+                                startTimeInMillis += timerElapseVelocity
+                            }
+                        }
+                    }
+                    else -> object : TimerTask() {
+                        override fun run() {
+                            when (startTimeInMillis) {
+                                0L -> {
+                                    Log.d(logTag, "subtractiveTimerTask - Timer 0... cancelled")
+                                    stopTimer()
+                                }
+                                else -> {
+                                    Log.d(logTag, "subtractiveTimerTask - actual second: " + startTimeInMillis)
+                                    startTimeInMillis -= timerElapseVelocity
+                                }
+                            }
+                        }
+                    }
                 },
-                1,
-                1
+                timerElapseVelocity,
+                timerElapseVelocity
         )
+
     }
 
     fun stopTimer() {
-        Log.w("timer...", "Timer cancelled")
-        timer.cancel()
-        timer.purge()
+        Log.d(logTag, "Timer cancelled")
+        timer?.purge()
+        timer?.cancel()
     }
 
 }
 
-//  --------------------------------------------------------------------------------------------
-//      extension of typedArray get string that accept default
-//  --------------------------------------------------------------------------------------------
+
+//  ------------------------------------------------------------------------------------------------
+//      extension of TypedArray get string that accept default
+//  ------------------------------------------------------------------------------------------------
 private fun TypedArray.getString(stringId: Int, default: String): String {
     return when (this.getString(stringId)) {
         null -> default
         else -> this.getString(stringId)
     }
+}
+
+//  ------------------------------------------------------------------------------------------------
+//      extension of SparseArray isEmpty
+//  ------------------------------------------------------------------------------------------------
+private fun SparseArray<Long>.isEmpty(): Boolean {
+    val size = this.size()
+    for (i in 0 until size) {
+        if (size != this.size()) throw ConcurrentModificationException()
+        if (this.get(i) != 0L) return false
+    }
+    return true
 }
