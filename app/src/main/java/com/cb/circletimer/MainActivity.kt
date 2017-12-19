@@ -4,8 +4,6 @@ import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.text.Editable
 import android.text.TextWatcher
-import android.util.Log
-import android.view.MotionEvent
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
@@ -50,7 +48,11 @@ class MainActivity : AppCompatActivity() {
             }
 
             override fun onTextChanged(time: CharSequence?, p1: Int, p2: Int, p3: Int) {
-                circleTimerView.startTimeInMillis = time.toString().toLong()
+                if(time.toString() != ""){
+                    circleTimerView.startTimeInMillis = time.toString().toLong()
+                }else{
+                    circleTimerView.startTimeInMillis = 0
+                }
             }
         })
 
@@ -63,7 +65,11 @@ class MainActivity : AppCompatActivity() {
             }
 
             override fun onTextChanged(time: CharSequence?, p1: Int, p2: Int, p3: Int) {
-                circleTimerView.circleTimeLimitInMillis = time.toString().toLong()
+                if(time.toString() != ""){
+                    circleTimerView.circleTimeLimitInMillis = time.toString().toLong()
+                }else{
+                    circleTimerView.circleTimeLimitInMillis = 0
+                }
             }
         })
     }

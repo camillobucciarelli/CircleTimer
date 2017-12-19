@@ -53,7 +53,7 @@ class CircleTimerView : View {
     private val startTimeInMillisDef = 0
     private val swipeAngleDef = 360f
     private val swipeAngleAddDef = 0f
-    private val timerElapseVelocity = 200L
+    private val timerElapseVelocity = 100L
     private val additiveModeDef = false
     private val labelSizeDef = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 30f, context.resources.displayMetrics)
     private val labelColorDef = Color.GRAY
@@ -344,7 +344,6 @@ class CircleTimerView : View {
                 timerElapseVelocity,
                 timerElapseVelocity
         )
-
     }
 
     fun stopTimer() {
