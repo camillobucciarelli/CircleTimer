@@ -1,6 +1,24 @@
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 
+//ext {
+//    bintrayRepo = 'Android'
+//    bintrayName = 'circle-timer-view'
+//    publishedGroupId = 'com.jenjiskan.circle-timer-view'
+//    libraryName = 'circle-timer-view'
+//    artifact = 'circle-timer-view'
+//    libraryDescription = 'Circle timer view'
+//    siteUrl = 'https://github.com/jenjiskan/CircleTimer'
+//    gitUrl = 'https://github.com/jenjiskan/CircleTimer.git'
+//    libraryVersion = '1.0'
+//    developerId = 'jenjiskan'
+//    developerName = 'Camillo Bucciarelli'
+//    developerEmail = 'bucciarelli.camillo92@gmail.com'
+//    licenseName = 'The Apache Software License, Version 2.0'
+//    licenseUrl = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+//    allLicenses = ["Apache-2.0"]
+//}
+
 android {
     compileSdkVersion 27
     defaultConfig {
@@ -33,3 +51,6 @@ dependencies {
 repositories {
     mavenCentral()
 }
+
+//apply from: 'https://raw.githubusercontent.com/Hariofspades/JCenter/master/installv1.gradle'
+//apply from: 'https://raw.githubusercontent.com/Hariofspades/JCenter/master/bintrayv1.gradle'

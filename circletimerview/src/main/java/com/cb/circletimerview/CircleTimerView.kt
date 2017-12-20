@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit
  *
  *Licensed under the Apache License, Version 2.0 (the "License");
  *you may not use this file except in compliance with the License.
- *You may obtain a copy of the License at
+ *You may obtain timeNotZero copy of the License at
  *
  *http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -46,6 +46,7 @@ class CircleTimerView : View {
     //  --------------------------------------------------------------------------------------------
     //      default values
     //  --------------------------------------------------------------------------------------------
+    var timeNotZero = false
     private val timeDivider = SparseArray<Long>()
     private val dividedTime = SparseArray<Long>()
     private val timeLabel = SparseArray<String>()
@@ -68,7 +69,7 @@ class CircleTimerView : View {
     private val lineSeparatorColorDef = Color.parseColor("#b0bec5")
     private val lineSeparatorStrokeWidthDef = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 0.5f, context.resources.displayMetrics)
     private val backCircleColorDef = Color.parseColor("#b0bec5")
-    private val backCircleStrokeWidthDef = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 10f, context.resources.displayMetrics)
+    private val backCircleStrokeWidthDef = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 5f, context.resources.displayMetrics)
     private val foregroundCircleColorDef = Color.parseColor("#263238")
     private val foregroundCircleStrokeWidthDef = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 15f, context.resources.displayMetrics)
     private val foregroundCircleStartValueDef = -90f
@@ -185,6 +186,7 @@ class CircleTimerView : View {
         paint.textSize = size
         paint.textAlign = Paint.Align.CENTER
         if (bold) paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+        paint.isAntiAlias = true
     }
 
     //  --------------------------------------------------------------------------------------------
@@ -271,13 +273,13 @@ class CircleTimerView : View {
         dividedTime.put(1, TimeUnit.MILLISECONDS.toHours(timeValue))
         dividedTime.put(2, TimeUnit.MILLISECONDS.toMinutes(timeValue))
         dividedTime.put(3, TimeUnit.MILLISECONDS.toSeconds(timeValue))
-        Log.d(logTag, "days: " + TimeUnit.MILLISECONDS.toDays(timeValue))
-        Log.d(logTag, "hours: " + TimeUnit.MILLISECONDS.toHours(timeValue))
-        Log.d(logTag, "minutes: " + TimeUnit.MILLISECONDS.toMinutes(timeValue))
-        Log.d(logTag, "seconds: " + TimeUnit.MILLISECONDS.toSeconds(timeValue))
-        Log.d(logTag, "dividedTime.size(): " + dividedTime.size())
-
+        Log.d(logTag, "days: ${TimeUnit.MILLISECONDS.toDays(timeValue)}")
+        Log.d(logTag, "hours: ${TimeUnit.MILLISECONDS.toHours(timeValue)}")
+        Log.d(logTag, "minutes: ${TimeUnit.MILLISECONDS.toMinutes(timeValue)}")
+        Log.d(logTag, "seconds: ${TimeUnit.MILLISECONDS.toSeconds(timeValue)}")
+        Log.d(logTag, "dividedTime.size(): ${dividedTime.size()}")
         if (!dividedTime.isEmpty()) {
+            timeNotZero = true
             for (i in 0 until dividedTime.size() - 1) {
                 when (dividedTime.get(i)) {
                     0L -> {
@@ -295,6 +297,13 @@ class CircleTimerView : View {
                     }
                 }
             }
+        }
+
+        if (timeNotZero && dividedTime.isEmpty()){
+            labelTop = label(2)
+            valueTop = "0"
+            labelBottom = label(3)
+            valueBottom = "0"
         }
     }
 
@@ -314,14 +323,14 @@ class CircleTimerView : View {
     private fun label(position: Int) = timeLabel.get(position)
 
     fun startTimer() {
-        Log.w(logTag, "Timer additive mode... " + additiveMode)
+        Log.w(logTag, "Timer additive mode: $additiveMode")
         timer = Timer()
         timer!!.schedule(
                 when (additiveMode) {
                     true -> object : TimerTask() {
                         override fun run() {
                             handler.post {
-                                Log.d(logTag, "additiveTimerTask - actual second: " + startTimeInMillis)
+                                Log.d(logTag, "additiveTimerTask - actual second: $startTimeInMillis")
                                 startTimeInMillis += timerElapseVelocity
                             }
                         }
@@ -334,8 +343,9 @@ class CircleTimerView : View {
                                     stopTimer()
                                 }
                                 else -> {
-                                    Log.d(logTag, "subtractiveTimerTask - actual second: " + startTimeInMillis)
+                                    Log.d(logTag, "subtractiveTimerTask - actual second: $startTimeInMillis")
                                     startTimeInMillis -= timerElapseVelocity
+
                                 }
                             }
                         }

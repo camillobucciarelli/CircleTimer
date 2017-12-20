@@ -39,7 +39,6 @@ class MainActivity : AppCompatActivity() {
         }
 
         //  change start time
-
         startTime.addTextChangedListener(object : TextWatcher {
             override fun afterTextChanged(p0: Editable?) {
             }
